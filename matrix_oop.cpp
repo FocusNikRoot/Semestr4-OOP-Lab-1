@@ -81,24 +81,62 @@ Matrix Matrix::CalcComplements() const {
     if (rows_ != cols_) {
         throw std::invalid_argument("Matrix must be square");
     }
-    // ...
-    return Matrix(); // Заглушка
+    Matrix complements(rows_, cols_);
+    for (int i = 0; i < rows_; ++i) {
+        for (int j = 0; j < cols_; ++j) {
+            // Создаем матрицу, исключая i-ю строку и j-й столбец
+            Matrix minor(rows_ - 1, cols_ - 1);
+            for (int mi = 0, mji = 0; mi < rows_; ++mi) {
+                for (int mj = 0, mjj = 0; mj < cols_; ++mj) {
+                    if (mi != i && mj != j) {
+                        minor(mji, mjj) = matrix_[mi][mj];
+                        mjj++;
+                        if (mjj == cols_ - 1) {
+                            mjj = 0;
+                            mji++;
+                        }
+                    }
+                }
+            }
+            complements(i, j) = (i + j) % 2 == 0 ? minor.Determinant() : -minor.Determinant();
+        }
+    }
+    return complements;
 }
 
 double Matrix::Determinant() const {
     if (rows_ != cols_) {
         throw std::invalid_argument("Matrix must be square");
     }
-    // ...
-    return 0.0; // Заглушка
+    if (rows_ == 1) { return matrix_[0][0]; }
+    if (rows_ == 2) { return (matrix_[0][0] * matrix_[1][1]) - (matrix_[0][1] * matrix_[1][0]); }
+    double determinant = 0.0;
+    for (int j = 0; j < cols_; ++j) {
+        Matrix minor(rows_ - 1, cols_ - 1);
+        for (int mi = 1; mi < rows_; ++mi) {
+            for (int mj = 0; mj < cols_; ++mj) {
+                if (mj < j) { minor(mi - 1, mj) = matrix_[mi][mj]; }
+                else if (mj > j) { minor(mi - 1, mj - 1) = matrix_[mi][mj]; }
+            }
+        }
+        determinant += (j % 2 == 0 ? 1 : -1) * matrix_[0][j] * minor.Determinant();
+    }
+    return determinant;
 }
 
 Matrix Matrix::InverseMatrix() const {
     if (Determinant() == 0) {
         throw std::invalid_argument("Matrix determinant cannot be 0");
     }
-    // ...
-    return Matrix(); // Заглушка
+    double determinant = Determinant();
+    Matrix complements = CalcComplements();
+    Matrix inverse(rows_, cols_);
+    for (int i = 0; i < rows_; ++i) {
+        for (int j = 0; j < cols_; ++j) {
+            inverse(j, i) = complements(i, j) / determinant;
+        }
+    }
+    return inverse;
 }
 
 Matrix Matrix::operator+(const Matrix& other) const {
